@@ -1,29 +1,12 @@
 import express from "express";
 import { manager } from "../DAO/manager/db/productManager.js";
 import { manager as cManager } from "../DAO/manager/db/cartsManager.js";
+import userModel from "../DAO/model/user.model.js";
 
 const router = express.Router();
 
-/*
 router.get("/", (req, res) => {
-  manager.getProductos().then((data) => {
-    if (data) {
-      res.render("home", { data });
-    }
-  });
-});
-
-router.get("/realtimeproducts", (req, res) => {
-  res.render("realTimeProducts", {});
-});
-*/
-
-router.get("/", (req, res) => {
-  manager.getProductosView().then((data) => {
-    if (data) {
-      res.send({ status: "success", paiload: data });
-    }
-  });
+  res.redirect("session/login");
 });
 
 router.get("/products", async (req, res) => {
@@ -31,6 +14,22 @@ router.get("/products", async (req, res) => {
   const page = req.query.page;
   const query = req.query.query;
   const sort = req.query.sort;
+
+  if (!req.session.user)
+    return res.render("errors/base", {
+      error: "No tienes los permisos para acceder a esta seccion.",
+    });
+
+  const mail = req.session.user.email;
+  const nombre = req.session.user.first_name;
+  const apellido = req.session.user.last_name;
+  let rol = "";
+
+  if (mail == "adminCoder@coder.com") {
+    rol = "admin";
+  } else {
+    rol = "User";
+  }
 
   let limite = "",
     consulta = "",
@@ -49,7 +48,15 @@ router.get("/products", async (req, res) => {
       data.hasNextPage
         ? (nextLink = `/products?page=${data.nextPage}${limite}${consulta}${orden}`)
         : (nextLink = "");
-      res.render("products", { data, prevLink, nextLink });
+      res.render("products", {
+        data,
+        prevLink,
+        nextLink,
+        mail,
+        nombre,
+        apellido,
+        rol,
+      });
     }
   });
 });
